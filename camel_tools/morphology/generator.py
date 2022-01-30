@@ -60,7 +60,7 @@ class Generator(object):
 
         self._db = db
 
-    def generate(self, lemma, feats):
+    def generate(self, lemma, feats, debug=False):
         """Generate surface forms and their associated analyses for a given 
         lemma and a given set of (possibly underspecified) features. 
         The surface form is accessed through the `diac` feature.
@@ -202,7 +202,11 @@ class Generator(object):
                                     break
 
                             if not ignore_analysis:
-                                analyses.append(merged)
+                                if not debug:
+                                    analyses.append(merged)
+                                else:
+                                    analyses.append(
+                                        (merged, prefix_cat, stem_feats['stemcat'], suffix_cat))
 
         return list(analyses)
 
