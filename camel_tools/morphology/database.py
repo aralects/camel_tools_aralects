@@ -35,7 +35,7 @@ from camel_tools.utils.stringutils import force_unicode
 from camel_tools.morphology.utils import strip_lex
 from camel_tools.morphology.errors import InvalidDatabaseFlagError
 from camel_tools.morphology.errors import DatabaseParseError
-from camel_tools.data import DataCatalogue
+from camel_tools.data import CATALOGUE
 
 
 MorphologyDBFlags = namedtuple('MorphologyDBFlags', ['analysis', 'generation',
