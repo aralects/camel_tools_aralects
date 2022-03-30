@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2021 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -84,10 +84,13 @@ class Generator(object):
                 If an invalid value is given to a feature or if 'pos' feature
                 is not defined.
         """
+        debug_message = set()
 
-        lemma = strip_lex(lemma)
+        # lemma = strip_lex(lemma)
         if lemma not in self._db.lemma_hash:
-            return []
+            debug_message.add(
+                ('Lemma not foud in `self._db.lemma_hash`', 'L0'))
+            return [], debug_message
 
         for feat in feats:
             if feat not in self._db.defines:
@@ -106,7 +109,9 @@ class Generator(object):
         feat_set = frozenset(feats.keys())
 
         if not feat_set.issubset(default_feat_set):
-            return []
+            debug_message.add(
+                ('Requested features are not a subset of the default features', 'FD0'))
+            return [], debug_message
 
         # Set default values for undefined feats
         for feat in ['prc0', 'prc1', 'prc2', 'prc3', 'enc0', 'enc1', 'enc2']:
@@ -119,10 +124,13 @@ class Generator(object):
         for stem_feats in stem_feats_list:
 
             if 'vox' in feats and stem_feats['vox'] != feats['vox']:
+                debug_message.add(('No stem with same voice', 'XVox0'))
                 continue
             if 'rat' in feats and stem_feats['rat'] != feats['rat']:
+                debug_message.add(('No stem with same rationality', 'XRat0'))
                 continue
             if 'pos' in feats and stem_feats['pos'] != feats['pos']:
+                debug_message.add(('No stem with same POS', 'XPos0'))
                 continue
 
             ignore_stem = False
@@ -136,6 +144,8 @@ class Generator(object):
                     break
 
             if ignore_stem:
+                debug_message.add(
+                    ('No stem clitic value(s) match(es) requested clitic value(s)', 'FXC0'))
                 continue
 
             prefix_cats = self._db.stem_prefix_compat[stem_feats['stemcat']]
@@ -143,6 +153,8 @@ class Generator(object):
 
             for prefix_cat in prefix_cats:
                 if prefix_cat not in self._db.prefix_cat_hash:
+                    debug_message.add(
+                        ('No prefix matches with any of matching stems', 'XP0'))
                     continue
 
                 prefix_feats_list = self._db.prefix_cat_hash[prefix_cat]
@@ -161,10 +173,14 @@ class Generator(object):
                             break
 
                     if ignore_prefix:
+                        debug_message.add(
+                            ('No prefix proclitic value(s) match(es) requested proclitic value(s)', 'PP0'))
                         continue
 
                     for suffix_cat in suffix_cats:
                         if suffix_cat not in self._db.suffix_cat_hash:
+                            debug_message.add(
+                                ('No suffix matches with any of matching stems', 'XS0'))
                             continue
                         suffix_feats_list = (
                             self._db.suffix_cat_hash[suffix_cat])
@@ -173,6 +189,8 @@ class Generator(object):
                                  self._db.prefix_suffix_compat) or
                                 (suffix_cat not in
                                  self._db.prefix_suffix_compat[prefix_cat])):
+                                debug_message.add(
+                                    ('No prefix/suffix match with each other', 'PS0'))
                                 continue
 
                             ignore_suffix = False
@@ -189,6 +207,8 @@ class Generator(object):
                                     break
 
                             if ignore_suffix:
+                                debug_message.add(
+                                    ('No suffix enclitic value(s) match(es) requested enclitic value(s)', 'FSE0'))
                                 continue
 
                             merged = merge_features(self._db, prefix_feats,
@@ -207,8 +227,14 @@ class Generator(object):
                                 else:
                                     analyses.append(
                                         (merged, prefix_cat, stem_feats['stemcat'], suffix_cat))
+                            else:
+                                debug_message.add(
+                                    ('Merged features do not adhere to requested features', 'M0'))
+        analyses = list(analyses)
+        if analyses:
+            debug_message.add(('OK', 'OK'))
 
-        return list(analyses)
+        return analyses, debug_message
 
     def all_feats(self):
         """Return a set of all features provided by the database used in this
