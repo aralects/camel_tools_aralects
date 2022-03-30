@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2021 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ from camel_tools.utils.stringutils import force_unicode
 from camel_tools.morphology.utils import strip_lex
 from camel_tools.morphology.errors import InvalidDatabaseFlagError
 from camel_tools.morphology.errors import DatabaseParseError
-from camel_tools.data import CATALOGUE
+from camel_tools.data import DataCatalogue
 
 
 MorphologyDBFlags = namedtuple('MorphologyDBFlags', ['analysis', 'generation',
@@ -64,14 +64,14 @@ class MorphologyDB:
         """Returns a list of builtin databases provided with CAMeL Tools.
 
         Returns:
-            :obj:`list` of :obj:`~camel_tools.data.DatasetEntry`: List of
+            :obj:`list` of :obj:`~camel_tools.data.DatasetInfo`: List of
             builtin databases.
         """
 
-        return list(CATALOGUE.get_component('MorphologyDB').datasets)
+        return list(DataCatalogue.get_component_info('MorphologyDB').datasets)
 
     @staticmethod
-    def builtin_db(db_name=None, flags='a'):
+    def builtin_db(db_name='calima-msa-r13', flags='a'):
         """Create a :obj:`MorphologyDB` instance from one of the builtin
         databases provided.
 
@@ -87,10 +87,7 @@ class MorphologyDB:
             :obj:`MorphologyDB`: Instance of builtin database with given flags.
         """
 
-        if db_name is None:
-            db_name = CATALOGUE.components['MorphologyDB'].default
-
-        db_info = CATALOGUE.components['MorphologyDB'].datasets[db_name]
+        db_info = DataCatalogue.get_dataset_info('MorphologyDB', db_name)
 
         return MorphologyDB(str(Path(db_info.path, 'morphology.db')), flags)
 
@@ -127,10 +124,12 @@ class MorphologyDB:
         self.tokenizations = set()
         self.compute_feats = frozenset()
         self.stem_backoffs = {}
+        self.postregex = []
 
         self.prefix_hash = {}
         self.suffix_hash = {}
         self.stem_hash = {}
+        self.smartbackoff_hash = {}
 
         self.prefix_cat_hash = {}
         self.suffix_cat_hash = {}
@@ -294,7 +293,7 @@ class MorphologyDB:
             for line in dbfile:
                 line = force_unicode(line).strip()
 
-                if line == '###PREFIXES###':
+                if line in ['###POSTREGEX###', '###PREFIXES###']:
                     break
 
                 toks = line.split(u' ')
@@ -304,6 +303,21 @@ class MorphologyDB:
                         'invalid STEMBACKOFFS line {}'.format(repr(line)))
 
                 self.stem_backoffs[toks[1]] = toks[2:]
+
+            # Process POSTREGEX
+            if line == '###POSTREGEX###':
+                match_replace = []
+                for line in dbfile:
+                    line = force_unicode(line).strip()
+
+                    if line == '###PREFIXES###':
+                        if match_replace:
+                            for match, replace in zip(match_replace[0][1:], match_replace[1][1:]):
+                                self.postregex.append(
+                                    {'match': re.compile(match), 'replace': replace})
+                        break
+
+                    match_replace.append(line.split('\t'))
 
             # Process PREFIXES
             for line in dbfile:
@@ -363,7 +377,7 @@ class MorphologyDB:
             for line in dbfile:
                 line = force_unicode(line).strip()
 
-                if line == '###TABLE AB###':
+                if line in ['###SMARTBACKOFF###', '###TABLE AB###']:
                     break
 
                 parts = line.split(u'\t')
@@ -375,7 +389,6 @@ class MorphologyDB:
                 stem = parts[0]
                 category = parts[1]
                 analysis = self._parse_analysis_line_toks(parts[2].split(u' '))
-                analysis['lex'] = strip_lex(analysis['lex'])
 
                 if self._withAnalysis:
                     if stem not in self.stem_hash:
@@ -389,6 +402,31 @@ class MorphologyDB:
                     if lemma_key not in self.lemma_hash:
                         self.lemma_hash[lemma_key] = []
                     self.lemma_hash[lemma_key].append(analysis)
+
+            # Process SMART BACKOFF
+            if line == '###SMARTBACKOFF###':
+                for line in dbfile:
+                    line = force_unicode(line).strip()
+
+                    if line == '###TABLE AB###':
+                        break
+
+                    parts = line.split(u'\t')
+
+                    if len(parts) != 3:
+                        raise DatabaseParseError(
+                            'invalid STEMS line {}'.format(repr(line)))
+
+                    stem = parts[0]
+                    category = parts[1]
+                    analysis = self._parse_analysis_line_toks(
+                        parts[2].split(u' '))
+
+                    if self._withAnalysis:
+                        if stem not in self.smartbackoff_hash:
+                            self.smartbackoff_hash[stem] = []
+                        self.smartbackoff_hash[stem].append(
+                            (category, analysis))
 
             # Process prefix_stem compatibility table
             for line in dbfile:

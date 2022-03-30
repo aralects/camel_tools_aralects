@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2021 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ from camel_tools.morphology.utils import merge_features
 from camel_tools.morphology.utils import simple_ar_to_caphi
 from camel_tools.utils.dediac import dediac_ar
 
+from copy import deepcopy
 
 _ALL_PUNC = u''.join(UNICODE_PUNCT_SYMBOL_CHARSET)
 
@@ -89,7 +90,7 @@ Removes the tatweel/kashida character and does the following conversions:
 
 
 _BACKOFF_TYPES = frozenset(['NONE', 'NOAN_ALL', 'NOAN_PROP', 'ADD_ALL',
-                            'ADD_PROP'])
+                            'ADD_PROP', 'SMART'])
 
 
 class AnalyzedWord(namedtuple('AnalyzedWord', ['word', 'analyses'])):
@@ -184,6 +185,9 @@ class Analyzer:
         if backoff in _BACKOFF_TYPES:
             if backoff == 'NONE':
                 self._backoff_condition = None
+                self._backoff_action = None
+            elif backoff == 'SMART':
+                self._backoff_condition = backoff
                 self._backoff_action = None
             else:
                 backoff_toks = backoff.split('_')
@@ -476,6 +480,46 @@ class Analyzer:
                                                            stem_analyses,
                                                            suffix_analyses)
                 analyses.extend(combined)
+
+        elif self._backoff_condition == 'SMART' and len(analyses) == 0:
+            segments_gen = _segments_gen(word_normal, self._db.max_prefix_size,
+                                         self._db.max_suffix_size)
+            for segmentation in segments_gen:
+                prefix = segmentation[0]
+                stem = segmentation[1]
+                suffix = segmentation[2]
+
+                for match_re, abstract_analyses in self._db.smartbackoff_hash.items():
+                    match = re.match(match_re, stem)
+                    if match is None:
+                        continue
+
+                    prefix_analyses = self._db.prefix_hash.get(prefix, None)
+                    suffix_analyses = self._db.suffix_hash.get(suffix, None)
+
+                    if prefix_analyses is None or suffix_analyses is None:
+                        continue
+
+                    concrete_analyses = []
+                    for entry in abstract_analyses:
+                        entry_ = deepcopy(entry)
+                        entry_[1]['diac'] = re.sub(
+                            match_re, entry_[1]['diac'], stem)
+                        entry_[1]['bw'] = re.sub(
+                            match_re, entry_[1]['bw'], stem)
+                        entry_[1]['lex'] = re.sub(
+                            match_re, entry_[1]['lex'], stem)
+                        entry_[1]['root'] = re.sub(
+                            match_re, entry_[1]['root'], stem)
+                        concrete_analyses.append(entry_)
+                    stem_analyses = concrete_analyses
+
+                    if stem_analyses is not None:
+                        combined = self._combined_analyses(word_dediac,
+                                                           prefix_analyses,
+                                                           stem_analyses,
+                                                           suffix_analyses)
+                        analyses.extend(combined)
 
         result = list(analyses)
 
