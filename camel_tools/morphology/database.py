@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2021 New York University Abu Dhabi
+# Copyright 2018-2022 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,6 @@ MorphologyDBFlags = namedtuple('MorphologyDBFlags', ['analysis', 'generation',
 
 class MorphologyDB:
     """Class providing indexes from a given morphology database file.
-
     Args:
         fpath (:obj:`str`): File path to database.
         flags (:obj:`str`): Flag string (similar to opening files) indicates
@@ -53,7 +52,6 @@ class MorphologyDB:
             reinflection. 'r' is equivalent to 'ag' since the reinflector
             uses both analyzer and generator components internally.
             Defaults to 'a'.
-
     Raises:
         :obj:`~camel_tools.morphology.errors.InvalidDatabaseFlagError`: When
             an invalid flag value is given.
@@ -62,19 +60,17 @@ class MorphologyDB:
     @staticmethod
     def list_builtin_dbs():
         """Returns a list of builtin databases provided with CAMeL Tools.
-
         Returns:
-            :obj:`list` of :obj:`~camel_tools.data.DatasetInfo`: List of
+            :obj:`list` of :obj:`~camel_tools.data.DatasetEntry`: List of
             builtin databases.
         """
 
-        return list(DataCatalogue.get_component_info('MorphologyDB').datasets)
+        return list(CATALOGUE.get_component('MorphologyDB').datasets)
 
     @staticmethod
-    def builtin_db(db_name='calima-msa-r13', flags='a'):
+    def builtin_db(db_name=None, flags='a'):
         """Create a :obj:`MorphologyDB` instance from one of the builtin
         databases provided.
-
         Args:
             db_name (:obj:`str`, optional): Name of builtin database.
                 You can use :meth:`list_builtin_dbs` to get a list of
@@ -82,12 +78,14 @@ class MorphologyDB:
                 Defaults to 'calima-msa-r13'.
             flags (:obj:`str`, optional): Flag string to be passed to
                 :obj:`MorphologyDB` constructor. Defaults to 'a'.
-
         Returns:
             :obj:`MorphologyDB`: Instance of builtin database with given flags.
         """
 
-        db_info = DataCatalogue.get_dataset_info('MorphologyDB', db_name)
+        if db_name is None:
+            db_name = CATALOGUE.components['MorphologyDB'].default
+
+        db_info = CATALOGUE.components['MorphologyDB'].datasets[db_name]
 
         return MorphologyDB(str(Path(db_info.path, 'morphology.db')), flags)
 
@@ -501,7 +499,6 @@ class MorphologyDB:
 
     def all_feats(self):
         """Return a set of all features provided by this database instance.
-
         Returns:
             :obj:`frozenset` of :obj:`str`: The set all features provided by
             this database instance.
@@ -512,7 +509,6 @@ class MorphologyDB:
     def tok_feats(self):
         """Return a set of tokenization features provided by this database
         instance.
-
         Returns:
             :obj:`frozenset` of :obj:`str`: The set tokenization features
             provided by this database instance.
