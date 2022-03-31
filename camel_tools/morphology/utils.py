@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2021 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -165,6 +165,16 @@ def normalize_tanwyn(word, mode='AF'):
     return word
 
 
+def rewrite_diac_camel_morph(word, rewrites):
+    word = _REWRITE_DIAC_RE_5.sub(u'', word)
+    for rewrite in rewrites:
+        word = rewrite['match'].sub(rewrite['replace'], word)
+    word = _REWRITE_DIAC_RE_3.sub(u'\u0627\\1', word)
+    word = _REWRITE_DIAC_RE_4.sub(u'\u0627', word)
+    word = _REWRITE_DIAC_RE_6.sub(u'\u0651', word)
+    return word
+
+
 def rewrite_diac(word):
     word = _REWRITE_DIAC_RE_1.sub(u'\\1\u0651', word)
     word = _REWRITE_DIAC_RE_2.sub(u'', word)
@@ -252,7 +262,7 @@ def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF"):
     result['stem'] = stem_feats['diac']
     result['stemgloss'] = stem_feats.get('gloss', '')
 
-    result['diac'] = normalize_tanwyn(rewrite_diac(result['diac']),
+    result['diac'] = normalize_tanwyn(rewrite_diac_camel_morph(result['diac'], db.postregex),
                                       diac_mode)
 
     for feat in _TOK_SCHEMES_1:
