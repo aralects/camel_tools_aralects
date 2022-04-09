@@ -55,7 +55,7 @@ _REWRITE_DIAC_RE_1 = re.compile(u'#\\+*([\u062a\u062b\u062f\u0630\u0631\u0632'
 # Moon letters with definite article
 _REWRITE_DIAC_RE_2 = re.compile(u'#\\+*')
 # Fatha after Alif
-_REWRITE_DIAC_RE_3 = re.compile(u'\u0627\\+?\u064e([\u0629\u062a])')
+_REWRITE_DIAC_RE_3 = re.compile(u'(?<!^)\u0627\\+?\u064e([\u0629\u062a])')
 # Hamza Wasl
 _REWRITE_DIAC_RE_4 = re.compile(u'\u0671')
 # Remove '+'s
