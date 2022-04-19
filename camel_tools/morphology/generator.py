@@ -114,7 +114,7 @@ class Generator(object):
             return [], debug_message
 
         # Set default values for undefined feats
-        for feat in ['prc0', 'prc1', 'prc2', 'prc3', 'enc0', 'enc1', 'enc2']:
+        for feat in ['prc0', 'prc1', 'prc1.5', 'prc2', 'prc3', 'enc0', 'enc1', 'enc2']:
             if feat not in feats and feat in default:
                 feats[feat] = default[feat]
 
@@ -134,7 +134,7 @@ class Generator(object):
                 continue
 
             ignore_stem = False
-            for feat in ['prc0', 'prc1', 'prc2', 'prc3', 'enc0', 'enc1', 'enc2']:
+            for feat in ['prc0', 'prc1', 'prc1.5', 'prc2', 'prc3', 'enc0', 'enc1', 'enc2']:
                 if feat not in feats:
                     continue
                 if (feat in stem_feats and
@@ -161,7 +161,7 @@ class Generator(object):
                 for prefix_feats in prefix_feats_list:
                     ignore_prefix = False
 
-                    for feat in ['prc0', 'prc1', 'prc2', 'prc3']:
+                    for feat in ['prc0', 'prc1', 'prc1.5', 'prc2', 'prc3']:
                         if feat not in feats:
                             continue
                         if ((feats[feat] != '0' and
