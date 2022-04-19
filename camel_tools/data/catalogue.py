@@ -43,7 +43,7 @@ from camel_tools.data.downloader import HTTPDownloader
 
 
 HASH_BLOCK_SIZE = 65536
-CATALOGUE_URL = "https://raw.githubusercontent.com/CAMeL-Lab/camel-tools-data/main/catalogue-1.3.json"
+CATALOGUE_URL = "https://raw.githubusercontent.com/CAMeL-Lab/camel-tools-data/main/catalogue-1.4.json"
 
 
 def _get_appdatadir():
@@ -513,4 +513,4 @@ class Catalogue:
             # Update versions file
             ct_versions[dep] = dep_pkg.version
             with CT_VERSIONS_PATH.open('w', encoding='utf-8') as versions_fp:
-                json.dump(ct_versions, versions_fp)
+                json.dump(ct_versions, versions_fp, indent=4)
