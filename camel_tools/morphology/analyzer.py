@@ -428,28 +428,29 @@ class Analyzer:
             return [result]
 
         else:
-            segments_gen = _segments_gen(word_normal, self._db.max_prefix_size,
-                                         self._db.max_suffix_size)
+            if self._backoff_condition != 'SMART':
+                segments_gen = _segments_gen(word_normal, self._db.max_prefix_size,
+                                            self._db.max_suffix_size)
 
-            for segmentation in segments_gen:
-                prefix = segmentation[0]
-                stem = segmentation[1]
-                suffix = segmentation[2]
+                for segmentation in segments_gen:
+                    prefix = segmentation[0]
+                    stem = segmentation[1]
+                    suffix = segmentation[2]
 
-                prefix_analyses = self._db.prefix_hash.get(prefix, None)
-                suffix_analyses = self._db.suffix_hash.get(suffix, None)
+                    prefix_analyses = self._db.prefix_hash.get(prefix, None)
+                    suffix_analyses = self._db.suffix_hash.get(suffix, None)
 
-                if prefix_analyses is None or suffix_analyses is None:
-                    continue
+                    if prefix_analyses is None or suffix_analyses is None:
+                        continue
 
-                stem_analyses = self._db.stem_hash.get(stem, None)
+                    stem_analyses = self._db.stem_hash.get(stem, None)
 
-                if stem_analyses is not None:
-                    combined = self._combined_analyses(word_dediac,
-                                                       prefix_analyses,
-                                                       stem_analyses,
-                                                       suffix_analyses)
-                    analyses.extend(combined)
+                    if stem_analyses is not None:
+                        combined = self._combined_analyses(word_dediac,
+                                                        prefix_analyses,
+                                                        stem_analyses,
+                                                        suffix_analyses)
+                        analyses.extend(combined)
 
         if ((self._backoff_condition == 'NOAN' and len(analyses) == 0) or
                 (self._backoff_condition == 'ADD')):
@@ -489,7 +490,10 @@ class Analyzer:
                 stem = segmentation[1]
                 suffix = segmentation[2]
 
-                for match_re, abstract_analyses in self._db.smartbackoff_hash.items():
+                smartbackoff_hash = self._db.smartbackoff_hash.get(len(stem))
+                if not smartbackoff_hash:
+                    continue
+                for match_re, abstract_analyses in smartbackoff_hash.items():
                     match = re.match(match_re, stem)
                     if match is None:
                         continue
