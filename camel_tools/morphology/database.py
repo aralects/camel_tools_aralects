@@ -425,7 +425,16 @@ class MorphologyDB:
                             self.smartbackoff_hash[stem] = []
                         self.smartbackoff_hash[stem].append(
                             (category, analysis))
-
+                
+                smartbackoff_hash = {}
+                for k, v in self.smartbackoff_hash.items():
+                    chars = re.sub(r'\([^\(\)]+\)', '#', k)
+                    chars = re.sub(r'[\^\$auio\\]', '', chars)
+                    for vv in v:
+                        analysis = vv[1]
+                        smartbackoff_hash.setdefault(len(chars), {}).setdefault(k, []).append(vv)
+                self.smartbackoff_hash = smartbackoff_hash
+            
             # Process prefix_stem compatibility table
             for line in dbfile:
                 line = force_unicode(line).strip()
