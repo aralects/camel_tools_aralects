@@ -310,6 +310,12 @@ class MorphologyDB:
 
                     if line == '###PREFIXES###':
                         if match_replace:
+                            if len(match_replace[0]) < len(match_replace[1]):
+                                diff = len(match_replace[1]) - len(match_replace[0])
+                                match_replace[0] += [''] * (diff if diff > 0 else 0)
+                            elif len(match_replace[0]) > len(match_replace[1]):
+                                diff = len(match_replace[0]) - len(match_replace[1])
+                                match_replace[1] += [''] * (diff if diff > 0 else 0)
                             for match, replace in zip(match_replace[0][1:], match_replace[1][1:]):
                                 self.postregex.append(
                                     {'match': re.compile(match), 'replace': replace})
