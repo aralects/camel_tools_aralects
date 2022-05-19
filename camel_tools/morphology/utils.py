@@ -63,6 +63,12 @@ _REWRITE_DIAC_RE_5 = re.compile(u'\\+')
 # Fix Multiple Shadda's
 # FIXME: Remove after DB fix
 _REWRITE_DIAC_RE_6 = re.compile(u'\u0651+')
+# Sun letters with definite article (CAMeL Morph)
+_REWRITE_DIAC_RE_CM_1 = re.compile(u'@\\+*([\u062a\u062b\u062f\u0630\u0631\u0632'
+                                u'\u0633\u0634\u0635\u0636\u0637\u0638\u0644'
+                                u'\u0646])')
+# Moon letters with definite article
+_REWRITE_DIAC_RE_CM_2 = re.compile(u'@\\+*')
 
 # Sun letters
 _REWRITE_CAPHI_RE_1 = re.compile(u'(l-)\\+(t\\_|th\\_|d\\_|th\\.\\_|r\\_|z\\_|'
@@ -166,6 +172,8 @@ def normalize_tanwyn(word, mode='AF'):
 
 
 def rewrite_diac_camel_morph(word, rewrites):
+    word = _REWRITE_DIAC_RE_CM_1.sub(u'\\1\u0651', word)
+    word = _REWRITE_DIAC_RE_CM_2.sub(u'', word)
     word = _REWRITE_DIAC_RE_5.sub(u'', word)
     for rewrite in rewrites:
         word = rewrite['match'].sub(rewrite['replace'], word)
