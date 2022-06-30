@@ -96,6 +96,7 @@ class MorphologyDB:
         self._withAnalysis = False
         self._withReinflection = False
         self._withGeneration = False
+        self._debug = False
         self._defaultKey = 'pos'
 
         for flag in flags:
@@ -103,6 +104,10 @@ class MorphologyDB:
                 self._withAnalysis = True
             elif flag == 'g':
                 self._withGeneration = True
+            # Generation debugging
+            elif flag == 'gd':
+                self._withGeneration = True
+                self._debug = True
             elif flag == 'r':
                 self._withReinflection = True
                 self._withAnalysis = True
@@ -393,6 +398,8 @@ class MorphologyDB:
                 stem = parts[0]
                 category = parts[1]
                 analysis = self._parse_analysis_line_toks(parts[2].split(u' '))
+                if not self._debug:
+                    analysis['lex'] = strip_lex(analysis['lex'])
 
                 if self._withAnalysis:
                     if stem not in self.stem_hash:
