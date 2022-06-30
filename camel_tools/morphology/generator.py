@@ -90,7 +90,7 @@ class Generator(object):
         if lemma not in self._db.lemma_hash:
             debug_message.add(
                 ('Lemma not foud in `self._db.lemma_hash`', 'L0'))
-            return [], debug_message
+            return ([], debug_message) if debug else []
 
         for feat in feats:
             if feat not in self._db.defines:
@@ -111,7 +111,7 @@ class Generator(object):
         if not feat_set.issubset(default_feat_set):
             debug_message.add(
                 ('Requested features are not a subset of the default features', 'FD0'))
-            return [], debug_message
+            return ([], debug_message) if debug else []
 
         # Set default values for undefined feats
         for feat in ['prc0', 'prc1', 'prc1.5', 'prc2', 'prc3', 'enc0', 'enc1', 'enc2']:
@@ -234,7 +234,7 @@ class Generator(object):
         if analyses:
             debug_message.add(('OK', 'OK'))
 
-        return analyses, debug_message
+        return (analyses, debug_message) if debug else analyses
 
     def all_feats(self):
         """Return a set of all features provided by the database used in this
