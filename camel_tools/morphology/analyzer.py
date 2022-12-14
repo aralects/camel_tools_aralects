@@ -90,7 +90,7 @@ Removes the tatweel/kashida character and does the following conversions:
 
 
 _BACKOFF_TYPES = frozenset(['NONE', 'NOAN_ALL', 'NOAN_PROP', 'ADD_ALL',
-                            'ADD_PROP', 'SMART'])
+                            'ADD_PROP', 'SMART', 'NOAN-ONLY_ALL'])
 
 
 class AnalyzedWord(namedtuple('AnalyzedWord', ['word', 'analyses'])):
@@ -428,7 +428,7 @@ class Analyzer:
             return [result]
 
         else:
-            if self._backoff_condition != 'SMART':
+            if self._backoff_condition not in ['SMART', 'NOAN-ONLY']:
                 segments_gen = _segments_gen(word_normal, self._db.max_prefix_size,
                                             self._db.max_suffix_size)
 
@@ -453,16 +453,20 @@ class Analyzer:
                         analyses.extend(combined)
 
         if ((self._backoff_condition == 'NOAN' and len(analyses) == 0) or
-                (self._backoff_condition == 'ADD')):
+                (self._backoff_condition in ['ADD', 'NOAN-ONLY'])):
 
             segments_gen = _segments_gen(word_normal,
                                          self._db.max_prefix_size,
                                          self._db.max_suffix_size)
 
             backoff_cats = self._db.stem_backoffs[self._backoff_action]
-            stem_analyses = [(cat, analysis)
-                             for cat, analysis in self._db.stem_hash['NOAN']
-                             if cat in backoff_cats]
+
+            if self._backoff_condition == 'NOAN-ONLY':
+                stem_analyses = self._db.stem_hash['NOAN']
+            else:
+                stem_analyses = [(cat, analysis)
+                                for cat, analysis in self._db.stem_hash['NOAN']
+                                if cat in backoff_cats]
 
             for segmentation in segments_gen:
                 prefix = segmentation[0]
@@ -480,6 +484,10 @@ class Analyzer:
                                                            prefix_analyses,
                                                            stem_analyses,
                                                            suffix_analyses)
+                if combined and self._backoff_condition == 'NOAN-ONLY':
+                    for analysis in combined:
+                        analysis['stem_seg'] = stem
+
                 analyses.extend(combined)
 
         elif self._backoff_condition == 'SMART' and len(analyses) == 0:
