@@ -231,7 +231,7 @@ def rewrite_pattern(word):
     return word
 
 
-def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF"):
+def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF", legacy=False):
     result = copy.copy(stem_feats)
 
     for stem_feat in stem_feats:
@@ -270,8 +270,12 @@ def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF"):
     result['stem'] = stem_feats['diac']
     result['stemgloss'] = stem_feats.get('gloss', '')
 
-    result['diac'] = normalize_tanwyn(rewrite_diac_camel_morph(result['diac'], db.postregex),
+    if legacy:
+        result['diac'] = normalize_tanwyn(rewrite_diac(result['diac']),
                                       diac_mode)
+    else:
+        result['diac'] = normalize_tanwyn(rewrite_diac_camel_morph(result['diac'], db.postregex),
+                                        diac_mode)
 
     for feat in _TOK_SCHEMES_1:
         if feat in db.defines:
