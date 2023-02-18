@@ -267,15 +267,16 @@ def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF", l
                 stem_feats.get(concat_feat, stem_feats.get('diac', '')),
                 suffix_feats.get(concat_feat, ''))
 
-    result['stem'] = stem_feats['diac']
+    result['stem'] = stem_feats.get('diac')
     result['stemgloss'] = stem_feats.get('gloss', '')
 
-    if legacy:
-        result['diac'] = normalize_tanwyn(rewrite_diac(result['diac']),
-                                      diac_mode)
-    else:
-        result['diac'] = normalize_tanwyn(rewrite_diac_camel_morph(result['diac'], db.postregex),
+    if 'diac' in result:
+        if legacy:
+            result['diac'] = normalize_tanwyn(rewrite_diac(result['diac']),
                                         diac_mode)
+        else:
+            result['diac'] = normalize_tanwyn(rewrite_diac_camel_morph(result['diac'], db.postregex),
+                                            diac_mode)
 
     for feat in _TOK_SCHEMES_1:
         if feat in db.defines:
