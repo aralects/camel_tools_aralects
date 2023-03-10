@@ -52,15 +52,16 @@ class Generator(object):
             does not support generation.
     """
 
-    def __init__(self, db):
+    def __init__(self, db, legacy=False):
         if not isinstance(db, MorphologyDB):
             raise GeneratorError('DB is not an instance of MorphologyDB')
         if not db.flags.generation:
             raise GeneratorError('DB does not support generation')
 
         self._db = db
+        self._legacy = legacy
 
-    def generate(self, lemma, feats, debug=False, legacy=False):
+    def generate(self, lemma, feats, debug=False):
         """Generate surface forms and their associated analyses for a given 
         lemma and a given set of (possibly underspecified) features. 
         The surface form is accessed through the `diac` feature.
@@ -212,7 +213,7 @@ class Generator(object):
                                 continue
 
                             merged = merge_features(self._db, prefix_feats,
-                                                    stem_feats, suffix_feats, legacy=legacy)
+                                                    stem_feats, suffix_feats, legacy=self._legacy)
 
                             ignore_analysis = False
                             for feat in feats.keys():
