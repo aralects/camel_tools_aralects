@@ -52,14 +52,15 @@ class Generator(object):
             does not support generation.
     """
 
-    def __init__(self, db, legacy=False):
+    def __init__(self, db, diac_rewrite_egy=False, diac_only=False):
         if not isinstance(db, MorphologyDB):
             raise GeneratorError('DB is not an instance of MorphologyDB')
         if not db.flags.generation:
             raise GeneratorError('DB does not support generation')
 
         self._db = db
-        self._legacy = legacy
+        self._diac_rewrite_egy = diac_rewrite_egy
+        self._diac_only = diac_only
 
     def generate(self, lemma, feats, debug=False):
         """Generate surface forms and their associated analyses for a given 
@@ -212,8 +213,10 @@ class Generator(object):
                                     ('No suffix enclitic value(s) match(es) requested enclitic value(s)', 'FSE0'))
                                 continue
 
-                            merged = merge_features(self._db, prefix_feats,
-                                                    stem_feats, suffix_feats, legacy=self._legacy)
+                            merged = merge_features(self._db,
+                                                    prefix_feats, stem_feats, suffix_feats,
+                                                    diac_rewrite_egy=self._diac_rewrite_egy,
+                                                    diac_only=self._diac_only)
 
                             ignore_analysis = False
                             for feat in feats.keys():
@@ -227,7 +230,9 @@ class Generator(object):
                                     analyses.append(merged)
                                 else:
                                     analyses.append(
-                                        (merged, prefix_cat, stem_feats['stemcat'], suffix_cat))
+                                        (merged,
+                                         prefix_cat, stem_feats['stemcat'], suffix_cat,
+                                         prefix_feats, stem_feats, suffix_feats))
                             else:
                                 debug_message.add(
                                     ('Merged features do not adhere to requested features', 'M0'))

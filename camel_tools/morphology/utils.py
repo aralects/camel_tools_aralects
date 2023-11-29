@@ -171,7 +171,7 @@ def normalize_tanwyn(word, mode='AF'):
     return word
 
 
-def rewrite_diac_camel_morph(word, rewrites):
+def rewrite_diac_camel_morph_egy(word, rewrites):
     word = _REWRITE_DIAC_RE_CM_1.sub(u'\\1\u0651', word)
     word = _REWRITE_DIAC_RE_CM_2.sub(u'', word)
     word = _REWRITE_DIAC_RE_5.sub(u'', word)
@@ -231,8 +231,43 @@ def rewrite_pattern(word):
     return word
 
 
-def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF", legacy=False):
+def merge_features(db,
+                   prefix_feats, stem_feats, suffix_feats,
+                   diac_mode="AF",
+                   diac_rewrite_egy=False,
+                   diac_only=False):
     result = copy.copy(stem_feats)
+    
+    if diac_only:
+        for stem_feat in stem_feats:
+            suffix_feat_val = suffix_feats.get(stem_feat, '')
+            if suffix_feat_val != '-' and suffix_feat_val != '':
+                result[stem_feat] = suffix_feat_val
+
+            prefix_feat_val = prefix_feats.get(stem_feat, '')
+            if prefix_feat_val != '-' and prefix_feat_val != '':
+                result[stem_feat] = prefix_feat_val
+        if 'diac' in db.defines:
+            result['diac'] = u'+'.join([x for x in [
+                prefix_feats.get('diac', ''),
+                stem_feats.get('diac', ''),
+                suffix_feats.get('diac', '')] if len(x) > 0])
+        if 'diac' in result:
+            if not diac_rewrite_egy:
+                result['diac'] = normalize_tanwyn(
+                    rewrite_diac(result['diac']), diac_mode)
+            else:
+                result['diac'] = normalize_tanwyn(
+                    rewrite_diac_camel_morph_egy(result['diac'], db.postregex), diac_mode)
+        
+        if 'form_gen' in db.defines and result['gen'] == '-':
+            result['gen'] = result['form_gen']
+
+        if 'form_num' in db.defines and result['num'] == '-':
+            result['num'] = result['form_num']
+        
+        return result
+    
 
     for stem_feat in stem_feats:
         suffix_feat_val = suffix_feats.get(stem_feat, '')
@@ -271,12 +306,12 @@ def merge_features(db, prefix_feats, stem_feats, suffix_feats, diac_mode="AF", l
     result['stemgloss'] = stem_feats.get('gloss', '')
 
     if 'diac' in result:
-        if legacy:
-            result['diac'] = normalize_tanwyn(rewrite_diac(result['diac']),
-                                        diac_mode)
+        if not diac_rewrite_egy:
+            result['diac'] = normalize_tanwyn(
+                rewrite_diac(result['diac']), diac_mode)
         else:
-            result['diac'] = normalize_tanwyn(rewrite_diac_camel_morph(result['diac'], db.postregex),
-                                            diac_mode)
+            result['diac'] = normalize_tanwyn(
+                rewrite_diac_camel_morph_egy(result['diac'], db.postregex), diac_mode)
 
     for feat in _TOK_SCHEMES_1:
         if feat in db.defines:
