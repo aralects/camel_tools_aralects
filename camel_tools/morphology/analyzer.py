@@ -168,7 +168,7 @@ class Analyzer:
                  norm_map=None,
                  strict_digit=False,
                  cache_size=0,
-                 diac_rewrite_egy=False):
+                 variant='msa'):
         if not isinstance(db, MorphologyDB):
             raise AnalyzerError('DB is not an instance of MorphologyDB')
         if not db.flags.analysis:
@@ -177,7 +177,7 @@ class Analyzer:
         self._db = db
         self._backoff = backoff
         self._strict_digit = strict_digit
-        self._diac_rewrite_egy = diac_rewrite_egy
+        self._variant = variant
 
         if norm_map is None:
             self._norm_map = DEFAULT_NORMALIZE_MAP
@@ -237,7 +237,7 @@ class Analyzer:
                         continue
 
                     merged = merge_features(self._db, prefix_feats, stem_feats,
-                                            suffix_feats, diac_rewrite_egy=self._diac_rewrite_egy)
+                                            suffix_feats, variant=self._variant)
                     merged['stem'] = stem_feats['diac']
                     merged['stemcat'] = stem_cat
 
@@ -282,7 +282,7 @@ class Analyzer:
                     stem_feats['caphi'] = simple_ar_to_caphi(stem)
 
                     merged = merge_features(self._db, prefix_feats, stem_feats,
-                                            suffix_feats, diac_rewrite_egy=self._diac_rewrite_egy)
+                                            suffix_feats, variant=self._variant)
 
                     merged['stem'] = stem_feats['diac']
                     merged['stemcat'] = stem_cat

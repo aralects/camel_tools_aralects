@@ -79,7 +79,7 @@ _REWRITE_CAPHI_RE_2 = re.compile(u'(\\S)[-]*\\+~')
 # Replace ending i_y with ii if suffix is not a vowel
 _REWRITE_CAPHI_RE_3 = re.compile(u'i\\_y-\\+([^iau]+|$)')
 # Replacing ending u_w with uu if suffix is not a vowel
-_REWRITE_CAPHI_RE_4 = re.compile(u'u\\_w-\\+([^iau]+|$)')
+_REWRITE_CAPHI_RE_4 = re.compile(u'u\\_w-(\\+[^iau]+|$)')
 # Remove hamza wasl if preceeded by a vowel
 _REWRITE_CAPHI_RE_5 = re.compile(u'([iua])\\+-2_[iua]')
 # Remove hamza wasl if preceeded by a non-vowel
@@ -183,7 +183,19 @@ def rewrite_diac_camel_morph_egy(word, rewrites):
     return word
 
 
-def rewrite_diac(word):
+def rewrite_diac_camel_morph_pal(word, rewrites):
+    word = _REWRITE_DIAC_RE_CM_1.sub(u'\\1\u0651', word)
+    word = _REWRITE_DIAC_RE_CM_2.sub(u'', word)
+    word = _REWRITE_DIAC_RE_5.sub(u'', word)
+    for rewrite in rewrites:
+        word = rewrite['match'].sub(rewrite['replace'], word)
+    word = _REWRITE_DIAC_RE_3.sub(u'\u0627\\1', word)
+    word = _REWRITE_DIAC_RE_4.sub(u'\u0627', word)
+    word = _REWRITE_DIAC_RE_6.sub(u'\u0651', word)
+    return word
+
+
+def rewrite_diac_camel_morph_msa(word, rewrites):
     word = _REWRITE_DIAC_RE_1.sub(u'\\1\u0651', word)
     word = _REWRITE_DIAC_RE_2.sub(u'', word)
     word = _REWRITE_DIAC_RE_3.sub(u'\u0627\\1', word)
@@ -234,7 +246,7 @@ def rewrite_pattern(word):
 def merge_features(db,
                    prefix_feats, stem_feats, suffix_feats,
                    diac_mode="AF",
-                   diac_rewrite_egy=False,
+                   variant='msa',
                    diac_only=False):
     result = copy.copy(stem_feats)
     
@@ -253,12 +265,9 @@ def merge_features(db,
                 stem_feats.get('diac', ''),
                 suffix_feats.get('diac', '')] if len(x) > 0])
         if 'diac' in result:
-            if not diac_rewrite_egy:
-                result['diac'] = normalize_tanwyn(
-                    rewrite_diac(result['diac']), diac_mode)
-            else:
-                result['diac'] = normalize_tanwyn(
-                    rewrite_diac_camel_morph_egy(result['diac'], db.postregex), diac_mode)
+            rewrite_fn = locals()[f'rewrite_diac_camel_morph_{variant}']
+            result['diac'] = normalize_tanwyn(
+                rewrite_fn(result['diac'], db.postregex), diac_mode)
         
         if 'form_gen' in db.defines and result['gen'] == '-':
             result['gen'] = result['form_gen']
@@ -306,12 +315,9 @@ def merge_features(db,
     result['stemgloss'] = stem_feats.get('gloss', '')
 
     if 'diac' in result:
-        if not diac_rewrite_egy:
-            result['diac'] = normalize_tanwyn(
-                rewrite_diac(result['diac']), diac_mode)
-        else:
-            result['diac'] = normalize_tanwyn(
-                rewrite_diac_camel_morph_egy(result['diac'], db.postregex), diac_mode)
+        rewrite_fn = globals()[f'rewrite_diac_camel_morph_{variant}']
+        result['diac'] = normalize_tanwyn(
+            rewrite_fn(result['diac'], db.postregex), diac_mode)
 
     for feat in _TOK_SCHEMES_1:
         if feat in db.defines:

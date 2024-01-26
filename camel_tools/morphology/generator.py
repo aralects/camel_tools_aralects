@@ -52,14 +52,14 @@ class Generator(object):
             does not support generation.
     """
 
-    def __init__(self, db, diac_rewrite_egy=False, diac_only=False):
+    def __init__(self, db, variant='msa', diac_only=False):
         if not isinstance(db, MorphologyDB):
             raise GeneratorError('DB is not an instance of MorphologyDB')
         if not db.flags.generation:
             raise GeneratorError('DB does not support generation')
 
         self._db = db
-        self._diac_rewrite_egy = diac_rewrite_egy
+        self._variant = variant
         self._diac_only = diac_only
 
     def generate(self, lemma, feats, debug=False):
@@ -215,7 +215,7 @@ class Generator(object):
 
                             merged = merge_features(self._db,
                                                     prefix_feats, stem_feats, suffix_feats,
-                                                    diac_rewrite_egy=self._diac_rewrite_egy,
+                                                    variant=self._variant,
                                                     diac_only=self._diac_only)
 
                             ignore_analysis = False
