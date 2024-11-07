@@ -3,7 +3,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2024 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -151,6 +151,8 @@ class SentimentAnalyzer:
         self.model.to(device)
         self.model.eval()
 
+        predicted_labels = []
+
         with torch.no_grad():
             for batch in data_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -159,8 +161,9 @@ class SentimentAnalyzer:
                           'attention_mask': batch['attention_mask']}
                 logits = self.model(**inputs)[0]
 
-        predictions = torch_fun.softmax(logits, dim=-1)
-        max_predictions = torch.argmax(predictions, dim=-1)
-        predicted_labels = [self.labels_map[p.item()] for p in max_predictions]
+                predictions = torch_fun.softmax(logits, dim=-1)
+                max_predictions = torch.argmax(predictions, dim=-1)
+                batch_preds = [self.labels_map[p.item()] for p in max_predictions]
+                predicted_labels.extend(batch_preds)
 
         return predicted_labels

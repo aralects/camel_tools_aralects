@@ -40,11 +40,26 @@ at `New York University Abu Dhabi <http://nyuad.nyu.edu/>`_.
 Installation
 ------------
 
-You will need Python 3.7 and above (64-bit) as well as
+You will need Python 3.8 - 3.12 (64-bit) as well as
 `the Rust compiler <https://www.rust-lang.org/learn/get-started>`_ installed.
 
 Linux/macOS
 ~~~~~~~~~~~
+
+You will need to install some additional dependencies on Linux and macOS.
+Primarily CMake, and Boost.
+
+On Ubuntu/Debian you can install these dependencies by running:
+
+.. code-block:: bash
+
+   sudo apt-get install cmake libboost-all-dev
+
+On macOS you can install them using Homewbrew by running:
+
+.. code-block:: bash
+
+   brew install cmake boost
 
 .. _linux-macos-install-pip:
 
@@ -58,6 +73,14 @@ Install using pip
    # or run the following if you already have camel_tools installed
    pip install camel-tools --upgrade
 
+On Apple silicon Macs you may have to run the following instead:
+
+.. code-block:: bash
+
+   CMAKE_OSX_ARCHITECTURES=arm64 pip install camel-tools
+
+   # or run the following if you already have camel_tools installed
+   CMAKE_OSX_ARCHITECTURES=arm64 pip install camel-tools --upgrade
 
 .. _linux-macos-install-source:
 
@@ -198,7 +221,7 @@ follows:
 .. code-block:: bash
 
    # Install dependencies
-   pip install sphinx recommonmark sphinx-rtd-theme
+   pip install sphinx myst-parser sphinx-rtd-theme
 
    # Go to docs subdirectory
    cd docs

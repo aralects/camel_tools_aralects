@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2024 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,7 @@ from camel_tools.disambig.common import ScoredAnalysis
 from camel_tools.disambig.bert._bert_morph_dataset import MorphDataset
 from camel_tools.disambig.score_function import score_analysis_uniform
 from camel_tools.disambig.score_function import FEATURE_SET_MAP
+from camel_tools.utils.dediac import dediac_ar
 
 
 _SCORING_FUNCTION_MAP = {
@@ -52,6 +53,17 @@ _SCORING_FUNCTION_MAP = {
 def _read_json(f_path):
     with open(f_path) as f:
         return json.load(f)
+
+
+def _dediac_sentence(sentence):
+    dediaced_sentence = []
+    for word in sentence:
+        dediaced = dediac_ar(word)
+        if len(dediaced) > 0:
+            dediaced_sentence.append(dediaced)
+        else:
+            dediaced_sentence.append(word)
+    return dediaced_sentence
 
 
 class _BERTFeatureTagger:
@@ -242,7 +254,7 @@ class BERTUnfactoredDisambiguator(Disambiguator):
                  scorer='uniform', tie_breaker='tag', use_gpu=True,
                  batch_size=32, ranking_cache=None, ranking_cache_size=100000):
         self._model = {
-            'unfactored': _BERTFeatureTagger(model_path)
+            'unfactored': _BERTFeatureTagger(model_path, use_gpu=use_gpu)
         }
         self._analyzer = analyzer
         self._features = features
@@ -456,7 +468,12 @@ class BERTUnfactoredDisambiguator(Disambiguator):
         if len(analyses) == 0:
             # If the word is not found in the analyzer,
             # return the predictions from BERT
-            return [ScoredAnalysis(0, bert_analysis)]
+            return [ScoredAnalysis(0,                      # score
+                                   bert_analysis,          # analysis
+                                   word_dd,                # diac
+                                   -99,                    # pos_lex_logprob
+                                   -99,                    # lex_logprob
+                                   )]
 
         scored = [(self._scorer(a,
                                 bert_analysis,
@@ -464,23 +481,29 @@ class BERTUnfactoredDisambiguator(Disambiguator):
                                 tie_breaker=self._tie_breaker,
                                 features=self._features), a)
                   for a in analyses]
-        scored.sort(key=lambda s: (-s[0], s[1]['diac']))
 
         max_score = max(s[0] for s in scored)
 
-        if max_score != 0:
-            scored_analyses = [ScoredAnalysis(s[0] / max_score, s[1])
-                               for s in scored]
-        else:
-            # If the max score is 0, do not divide
-            scored_analyses = [ScoredAnalysis(0, s[1]) for s in scored]
+        if max_score == 0:
+            max_score = 1
 
-        return scored_analyses[:self._top]
+        scored_analyses = [
+            ScoredAnalysis(
+                s / max_score,                  # score
+                a,                              # analysis
+                a['diac'],                      # diac
+                a.get('pos_lex_logprob', -99),  # pos_lex_logprob
+                a.get('lex_logprob', -99),      # lex_logprob
+            ) for s, a in scored]
+
+        scored_analyses.sort()
+
+        return scored_analyses
 
     def _disambiguate_word(self, word, pred):
         scored_analyses = self._scored_analyses(word, pred)
 
-        return DisambiguatedWord(word, scored_analyses)
+        return DisambiguatedWord(word, scored_analyses[:self._top])
 
     def _disambiguate_word_cached(self, word, pred):
         # Create a key for caching scored analysis given word and bert
@@ -493,7 +516,7 @@ class BERTUnfactoredDisambiguator(Disambiguator):
             scored_analyses = self._scored_analyses(word, pred)
             self._ranking_cache[key] = scored_analyses
 
-        return DisambiguatedWord(word, scored_analyses)
+        return DisambiguatedWord(word, scored_analyses[:self._top])
 
     def disambiguate_word(self, sentence, word_ndx):
         """Disambiguates a single word of a sentence.
@@ -521,7 +544,8 @@ class BERTUnfactoredDisambiguator(Disambiguator):
             disambiguated analyses for the given sentence.
         """
 
-        predictions = self._predict_sentence(sentence)
+        dediaced_sentence = _dediac_sentence(sentence)
+        predictions = self._predict_sentence(dediaced_sentence)
 
         return [self._disambiguate_word_fn(w, p)
                 for (w, p) in zip(sentence, predictions)]
@@ -538,7 +562,8 @@ class BERTUnfactoredDisambiguator(Disambiguator):
             disambiguated analyses for the given sentences.
         """
 
-        predictions = self._predict_sentences(sentences)
+        dediaced_sentences = [_dediac_sentence(s) for s in sentences]
+        predictions = self._predict_sentences(dediaced_sentences)
         disambiguated_sentences = []
 
         for sentence, prediction in zip(sentences, predictions):

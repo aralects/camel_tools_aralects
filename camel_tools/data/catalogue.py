@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2024 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,10 +40,11 @@ from tqdm import tqdm
 
 import camel_tools
 from camel_tools.data.downloader import HTTPDownloader
+from camel_tools.data.post_install import post_install
 
 
 HASH_BLOCK_SIZE = 65536
-CATALOGUE_URL = "https://raw.githubusercontent.com/CAMeL-Lab/camel-tools-data/main/catalogue-1.4.json"
+CATALOGUE_URL = "https://raw.githubusercontent.com/CAMeL-Lab/camel-tools-data/main/catalogue-1.5.json"
 
 
 def _get_appdatadir():
@@ -163,6 +164,11 @@ class PackageEntry:
 
     sha256: Optional[str]
     """SHA256 hash of package zip file. Is `None` for meta packages."""
+
+    post_install: Optional[dict]
+    """Post installation steps.
+    Is 'None' for packages that require no post-installation
+    """
 
 
 @dataclass(frozen=True)
@@ -297,7 +303,8 @@ class Catalogue:
                 files=files,
                 private=pkg_json['private'],
                 sha256=pkg_json.get('sha256', None),
-                size=pkg_json.get('size', None)
+                size=pkg_json.get('size', None),
+                post_install=pkg_json.get('post_install', None),
             )
 
             packages[pkg_name] = pkg_entry
@@ -514,3 +521,14 @@ class Catalogue:
             ct_versions[dep] = dep_pkg.version
             with CT_VERSIONS_PATH.open('w', encoding='utf-8') as versions_fp:
                 json.dump(ct_versions, versions_fp, indent=4)
+
+    def post_install_package(self, package: str, args: List[str]):
+        if package not in self.packages:
+            raise CatalogueError(f'Invalid package name {repr(package)}')
+
+        pkg = self.packages[package]
+        config = pkg.post_install
+        if config is None:
+            return
+
+        post_install(config, pkg.destination, args)

@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2024 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 
 
 from functools import reduce
+import sys
 
 
 __all__ = [
@@ -34,6 +35,7 @@ __all__ = [
     'score_analysis_uniform'
 ]
 
+_BACKOFF_PENALTY = float(f'1e-{sys.float_info.dig}')
 
 # 10 features described in Khalifa et al., 2020
 # Morphological Analysis and Disambiguation for Gulf Arabic: The Interplay
@@ -78,6 +80,9 @@ def score_analysis_uniform(analysis, reference, mle_model=None,
 
     if tie_breaker == 'tag':
         score += _tie_breaker_tag(analysis, reference, mle_model)
+
+    if analysis['source'] == 'backoff':
+        score -= _BACKOFF_PENALTY
 
     return score
 

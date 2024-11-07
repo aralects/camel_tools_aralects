@@ -2,7 +2,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2024 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -47,9 +47,11 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Artificial Intelligence',
     'Topic :: Scientific/Engineering :: Information Analysis',
@@ -69,23 +71,24 @@ INSTALL_REQUIRES = [
     'six',
     'docopt',
     'cachetools',
-    'numpy',
+    'numpy<2',
     'scipy',
     'pandas',
     'scikit-learn',
     'dill',
-    'torch>=1.3',
-    'transformers>=3.0.2',
+    'torch>=2.0',
+    'transformers>=4.0,<4.44.0',
     'editdistance',
     'requests',
     'emoji',
     'pyrsistent',
     'tabulate',
-    'tqdm'
+    'tqdm',
+    'muddler',
 ]
 
 INSTALL_REQUIRES_NOT_WINDOWS = [
-    'camel-kenlm'
+    'camel-kenlm >= 2024.5.6 ; platform_system!="Windows"'
 ]
 
 if sys.platform != 'win32':
@@ -103,6 +106,7 @@ setup(
               'camel_tools.utils',
               'camel_tools.morphology',
               'camel_tools.disambig',
+              'camel_tools.disambig.bert',
               'camel_tools.tokenizers',
               'camel_tools.tagger',
               'camel_tools.data',
@@ -137,5 +141,5 @@ setup(
     long_description=LONG_DESCRIPTION,
     classifiers=CLASSIFIERS,
     install_requires=INSTALL_REQUIRES,
-    python_requires='>=3.7.0, <3.10.*'
+    python_requires='>=3.8.0, <3.13'
 )

@@ -3,7 +3,7 @@
 
 # MIT License
 #
-# Copyright 2018-2022 New York University Abu Dhabi
+# Copyright 2018-2024 New York University Abu Dhabi
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 
 Usage:
     camel_data (-i | --install) [-f | --force] <PACKAGE>
+    camel_data (-p | --post-install) <PACKAGE> <ARGS>...
     camel_data (-l | --list)
     camel_data (-u | --update)
     camel_data (-v | --version)
@@ -38,6 +39,8 @@ Options:
         Show a list of packages available for download.
   -i --install
         Install package.
+  -p --post-install
+        Perform post installation for a given package.
   -f --force
         Force install package and dependencies.
   -u --update
@@ -142,6 +145,14 @@ def main():  # pragma: no cover
                 sys.exit(1)
             except DownloaderError as d:
                 sys.stderr.write(f'Error: {d.msg}')
+
+        if arguments['--post-install']:
+            package_name = arguments['<PACKAGE>']
+            if package_name is None:
+                pass
+            else:
+                CATALOGUE.post_install_package(package_name,
+                                               arguments['<ARGS>'])
 
     except KeyboardInterrupt:
         sys.stderr.write('Exiting...\n')
